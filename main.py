@@ -1,7 +1,18 @@
 """ChatList — отправка промта в несколько нейросетей и сравнение ответов."""
 
 import sys
+import logging
 from pathlib import Path
+
+# Настройка логирования в терминал
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+    stream=sys.stdout,
+    force=True,
+)
+log = logging.getLogger(__name__)
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -48,7 +59,17 @@ class SendWorker(QThread):
         self.prompt = prompt
 
     def run(self):
+        log.info("Отправка запроса в %d моделей...", len(self.models))
+        for m in self.models:
+            log.info("  → %s", m["name"])
         results = network.send_prompt_to_models(self.models, self.prompt)
+        ok = sum(1 for r in results if r["error"] is None)
+        log.info("Получено ответов: %d/%d", ok, len(results))
+        for r in results:
+            if r["error"]:
+                log.warning("  %s: %s", r["model"]["name"], r["error"])
+            else:
+                log.info("  %s: OK (%d символов)", r["model"]["name"], len(r["response"]))
         self.finished.emit(results)
 
 
@@ -316,11 +337,13 @@ class MainWindow(QMainWindow):
     def on_send(self):
         prompt = self.prompt_edit.toPlainText().strip()
         if not prompt:
+            log.warning("Промт пуст")
             QMessageBox.warning(self, "Внимание", "Введите промт")
             return
 
         active = models_module.get_active_models()
         if not active:
+            log.warning("Нет активных моделей")
             QMessageBox.warning(
                 self, "Внимание",
                 "Нет активных моделей. Добавьте модели в настройках."
@@ -329,6 +352,7 @@ class MainWindow(QMainWindow):
 
         # Сохраняем промт и очищаем временную таблицу при новом запросе
         prompt_id = db.create_prompt(prompt)
+        log.info("Промт сохранён (id=%d), отправка...", prompt_id)
         temp_results.clear()
         temp_results.set_prompt_id(prompt_id)
 
@@ -383,6 +407,7 @@ class MainWindow(QMainWindow):
 
     def on_save(self):
         count = temp_results.save_selected_to_db()
+        log.info("Сохранено результатов: %d", count)
         self.refresh_results_table()
         self.btn_save.setEnabled(False)
         self.btn_export.setEnabled(False)
@@ -416,6 +441,7 @@ class MainWindow(QMainWindow):
             with open(path, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
 
+        log.info("Экспорт в %s", path)
         QMessageBox.information(self, "Экспорт", f"Сохранено в {path}")
 
     def open_models_dialog(self):
@@ -430,15 +456,18 @@ class MainWindow(QMainWindow):
         db.set_setting("window_geometry", self.saveGeometry().toHex().data().decode())
 
     def closeEvent(self, event):
+        log.info("Закрытие приложения")
         self.save_geometry()
         event.accept()
 
 
 def main():
+    log.info("Запуск ChatList...")
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = MainWindow()
     window.show()
+    log.info("Окно открыто")
     sys.exit(app.exec_())
 
 
