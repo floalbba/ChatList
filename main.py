@@ -54,6 +54,7 @@ import models as models_module
 import network
 import temp_results
 import prompt_improver
+from version import __version__
 
 
 class SendWorker(QThread):
@@ -447,7 +448,7 @@ class AboutDialog(QDialog):
         self.setWindowTitle("О программе")
         self.setFixedSize(400, 220)
         layout = QVBoxLayout(self)
-        title = QLabel("ChatList")
+        title = QLabel(f"ChatList {__version__}")
         title.setStyleSheet("font-size: 18px; font-weight: bold;")
         layout.addWidget(title)
         layout.addWidget(QLabel(
@@ -491,7 +492,7 @@ def apply_app_theme(app, theme: str, font_size: int = 10):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("ChatList")
+        self.setWindowTitle(f"ChatList {__version__}")
         self.setMinimumSize(800, 600)
         self.resize(1000, 700)
         self.setup_menu()
@@ -802,7 +803,7 @@ class MainWindow(QMainWindow):
 
 
 def main():
-    log.info("Запуск ChatList...")
+    log.info("Запуск ChatList %s...", __version__)
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     theme = db.get_setting("theme") or "light"

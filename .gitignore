@@ -35,6 +35,10 @@ MANIFEST
 # ChatList logs
 logs/
 
+# Inno Setup output
+installer/*.exe
+installer.iss.generated
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatList — Сравнение ответов нейросетей</title>
+  <meta name="description" content="Отправляйте один промт в несколько нейросетей и сравнивайте ответы. OpenRouter, OpenAI, DeepSeek и другие.">
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --fg: #e4e4e7;
+      --accent: #6366f1;
+      --muted: #71717a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+    header { text-align: center; padding: 4rem 0 3rem; }
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--fg), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .tagline { color: var(--muted); font-size: 1.15rem; margin-top: 0.5rem; }
+    .download {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 1rem 2rem;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: opacity 0.2s;
+    }
+    .download:hover { opacity: 0.9; }
+    .version { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+    section { margin: 3rem 0; }
+    h2 { font-size: 1.25rem; margin-bottom: 1rem; color: var(--accent); }
+    ul { padding-left: 1.5rem; }
+    li { margin: 0.5rem 0; }
+    .links { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2rem; }
+    .links a { color: var(--accent); text-decoration: none; }
+    .links a:hover { text-decoration: underline; }
+    footer { text-align: center; padding: 3rem 0; color: var(--muted); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ChatList</h1>
+      <p class="tagline">Один промт — несколько нейросетей. Сравнивайте ответы в одном окне.</p>
+      <a href="https://github.com/USERNAME/REPO/releases/latest" class="download" id="download-btn">
+        Скачать для Windows
+      </a>
+      <p class="version" id="version">Версия 1.0.0</p>
+    </header>
+
+    <section>
+      <h2>Возможности</h2>
+      <ul>
+        <li>Отправка промта в несколько моделей одновременно (OpenRouter, OpenAI, DeepSeek, Groq)</li>
+        <li>AI-ассистент для улучшения и переформулировки промтов</li>
+        <li>Сохранение промтов и результатов в локальную базу</li>
+        <li>Экспорт выбранных ответов в Markdown или JSON</li>
+        <li>Настройки: светлая/тёмная тема, размер шрифта</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Требования</h2>
+      <ul>
+        <li>Windows 10 или 11</li>
+        <li>API-ключ OpenRouter (или другой поддерживаемый провайдер)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Установка</h2>
+      <ol style="padding-left: 1.5rem;">
+        <li>Скачайте <strong>ChatList-X.X.X-Setup.exe</strong> из раздела Releases</li>
+        <li>Запустите установщик</li>
+        <li>Создайте файл <code>.env</code> в папке приложения с переменной <code>OPENROUTER_API_KEY=ваш_ключ</code></li>
+      </ol>
+    </section>
+
+    <div class="links">
+      <a href="https://github.com/USERNAME/REPO">Исходный код</a>
+      <a href="https://github.com/USERNAME/REPO/releases">Все релизы</a>
+      <a href="https://openrouter.ai">OpenRouter</a>
+    </div>
+
+    <footer>
+      ChatList · Python, PyQt5, SQLite
+    </footer>
+  </div>
+
+    <!-- Замените USERNAME и REPO на свои: владелец репо и имя репозитория -->
+</body>
+</html>
