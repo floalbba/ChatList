@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QTextEdit,
+    QTextBrowser,
     QListWidget,
     QListWidgetItem,
     QTableWidget,
@@ -49,6 +50,27 @@ class SendWorker(QThread):
     def run(self):
         results = network.send_prompt_to_models(self.models, self.prompt)
         self.finished.emit(results)
+
+
+class MarkdownViewerDialog(QDialog):
+    """Диалог просмотра ответа в форматированном Markdown."""
+
+    def __init__(self, model_name: str, response: str, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(f"Ответ: {model_name}")
+        self.setMinimumSize(600, 500)
+        self.resize(800, 600)
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel(f"<b>{model_name}</b>"))
+        self.browser = QTextBrowser()
+        self.browser.setOpenExternalLinks(True)
+        try:
+            import markdown
+            html = markdown.markdown(response, extensions=["fenced_code", "tables", "nl2br"])
+        except ImportError:
+            html = response.replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+        self.browser.setHtml(f"<html><body style='font-family: sans-serif; padding: 10px;'>{html}</body></html>")
+        layout.addWidget(self.browser)
 
 
 class ModelsDialog(QDialog):
@@ -245,6 +267,9 @@ class MainWindow(QMainWindow):
         self.btn_export = QPushButton("Экспорт...")
         self.btn_export.clicked.connect(self.on_export)
         self.btn_export.setEnabled(False)
+        self.btn_open = QPushButton("Открыть")
+        self.btn_open.clicked.connect(self.on_open)
+        self.btn_open.setEnabled(False)
 
         self.progress = QProgressBar()
         self.progress.setVisible(False)
@@ -252,6 +277,7 @@ class MainWindow(QMainWindow):
 
         btn_row.addWidget(self.btn_send)
         btn_row.addWidget(self.btn_save)
+        btn_row.addWidget(self.btn_open)
         btn_row.addWidget(self.btn_models)
         btn_row.addWidget(self.btn_export)
         btn_row.addWidget(self.progress, 1)
@@ -265,6 +291,8 @@ class MainWindow(QMainWindow):
         self.results_table.setHorizontalHeaderLabels(["", "Модель", "Ответ"])
         self.results_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
         self.results_table.setColumnWidth(0, 40)
+        self.results_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.results_table.verticalHeader().setMinimumSectionSize(60)
         self.results_table.cellChanged.connect(self.on_cell_changed)
         layout.addWidget(self.results_table)
 
@@ -283,6 +311,7 @@ class MainWindow(QMainWindow):
             self.prompt_edit.setText(data["prompt"])
             temp_results.clear()
             self.refresh_results_table()
+            self.btn_open.setEnabled(False)
 
     def on_send(self):
         prompt = self.prompt_edit.toPlainText().strip()
@@ -316,6 +345,7 @@ class MainWindow(QMainWindow):
         self.refresh_results_table()
         self.btn_save.setEnabled(True)
         self.btn_export.setEnabled(True)
+        self.btn_open.setEnabled(True)
         self.load_prompts()
 
     def refresh_results_table(self):
@@ -328,7 +358,10 @@ class MainWindow(QMainWindow):
             cb.stateChanged.connect(lambda s, idx=i: self.on_checkbox_changed(idx, s))
             self.results_table.setCellWidget(i, 0, cb)
             self.results_table.setItem(i, 1, QTableWidgetItem(r["model_name"]))
-            self.results_table.setItem(i, 2, QTableWidgetItem(r["response"]))
+            response_item = QTableWidgetItem(r["response"])
+            response_item.setTextAlignment(Qt.AlignTop | Qt.AlignLeft)
+            self.results_table.setItem(i, 2, response_item)
+        self.results_table.resizeRowsToContents()
         self.results_table.blockSignals(False)
 
     def on_checkbox_changed(self, index: int, state):
@@ -337,11 +370,23 @@ class MainWindow(QMainWindow):
     def on_cell_changed(self, row, col):
         pass  # для синхронизации при ручном редактировании — при необходимости
 
+    def on_open(self):
+        row = self.results_table.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, "Внимание", "Выберите строку с ответом")
+            return
+        rows = temp_results.get_all()
+        if row >= len(rows):
+            return
+        r = rows[row]
+        MarkdownViewerDialog(r["model_name"], r["response"], self).exec_()
+
     def on_save(self):
         count = temp_results.save_selected_to_db()
         self.refresh_results_table()
         self.btn_save.setEnabled(False)
         self.btn_export.setEnabled(False)
+        self.btn_open.setEnabled(False)
         QMessageBox.information(self, "Сохранено", f"Сохранено записей: {count}")
 
     def on_export(self):
