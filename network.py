@@ -1,5 +1,7 @@
 """Модуль отправки HTTP-запросов к API нейросетей."""
 
+import logging
+import time
 import httpx
 from typing import Optional
 
@@ -10,6 +12,8 @@ try:
 except ImportError:
     def log_request(*args, **kwargs):
         pass
+
+log = logging.getLogger(__name__)
 
 
 class NetworkError(Exception):
@@ -98,14 +102,19 @@ def send_prompt_to_model(
 def send_prompt_to_models(
     models: list[dict],
     prompt: str,
-    timeout: float = 60.0
+    timeout: float = 60.0,
+    delay_between_requests: float = 2.0
 ) -> list[dict]:
     """
-    Отправляет промт в несколько моделей параллельно.
+    Отправляет промт в несколько моделей последовательно с задержкой.
+    delay_between_requests — пауза в секундах между запросами (снижает риск 429).
     Возвращает список: [{"model": dict, "response": str, "error": str|None}, ...]
     """
     results = []
-    for model in models:
+    for i, model in enumerate(models):
+        if i > 0:
+            log.info("Пауза %.1f с перед запросом к %s", delay_between_requests, model.get("name", "?"))
+            time.sleep(delay_between_requests)
         response_text, error = send_prompt_to_model(model, prompt, timeout)
         results.append({
             "model": model,
