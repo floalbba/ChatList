@@ -273,6 +273,17 @@ class MainWindow(QMainWindow):
         self.prompts_list.setMaximumWidth(250)
         self.prompts_list.itemClicked.connect(self.on_prompt_selected)
         right.addWidget(self.prompts_list)
+        prompts_crud = QHBoxLayout()
+        self.btn_prompt_add = QPushButton("Добавить")
+        self.btn_prompt_add.clicked.connect(self.on_prompt_add)
+        self.btn_prompt_edit = QPushButton("Изменить")
+        self.btn_prompt_edit.clicked.connect(self.on_prompt_edit)
+        self.btn_prompt_delete = QPushButton("Удалить")
+        self.btn_prompt_delete.clicked.connect(self.on_prompt_delete)
+        prompts_crud.addWidget(self.btn_prompt_add)
+        prompts_crud.addWidget(self.btn_prompt_edit)
+        prompts_crud.addWidget(self.btn_prompt_delete)
+        right.addLayout(prompts_crud)
 
         prompt_layout.addLayout(left, 1)
         prompt_layout.addLayout(right)
@@ -333,6 +344,51 @@ class MainWindow(QMainWindow):
             temp_results.clear()
             self.refresh_results_table()
             self.btn_open.setEnabled(False)
+
+    def on_prompt_add(self):
+        prompt = self.prompt_edit.toPlainText().strip()
+        if not prompt:
+            QMessageBox.warning(self, "Внимание", "Введите текст промта")
+            return
+        db.create_prompt(prompt)
+        self.load_prompts()
+        log.info("Промт добавлен")
+
+    def on_prompt_edit(self):
+        item = self.prompts_list.currentItem()
+        if not item:
+            QMessageBox.warning(self, "Внимание", "Выберите промт для редактирования")
+            return
+        data = item.data(Qt.UserRole)
+        if not data:
+            return
+        prompt = self.prompt_edit.toPlainText().strip()
+        if not prompt:
+            QMessageBox.warning(self, "Внимание", "Введите текст промта")
+            return
+        db.update_prompt(data["id"], prompt, data.get("tags", ""))
+        self.load_prompts()
+        log.info("Промт обновлён")
+
+    def on_prompt_delete(self):
+        item = self.prompts_list.currentItem()
+        if not item:
+            QMessageBox.warning(self, "Внимание", "Выберите промт для удаления")
+            return
+        data = item.data(Qt.UserRole)
+        if not data:
+            return
+        if QMessageBox.question(
+            self, "Подтверждение",
+            "Удалить выбранный промт?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        ) != QMessageBox.Yes:
+            return
+        db.delete_prompt(data["id"])
+        self.prompt_edit.clear()
+        self.load_prompts()
+        log.info("Промт удалён")
 
     def on_send(self):
         prompt = self.prompt_edit.toPlainText().strip()
