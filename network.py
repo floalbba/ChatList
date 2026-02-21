@@ -99,6 +99,80 @@ def send_prompt_to_model(
     return content.strip(), None
 
 
+def send_prompt_with_messages(
+    model: dict,
+    messages: list[dict],
+    timeout: float = 60.0
+) -> tuple[str, Optional[str]]:
+    """
+    Отправляет запрос с кастомным списком сообщений (system, user, assistant).
+    messages: [{"role": "system"|"user"|"assistant", "content": str}, ...]
+    Возвращает (response_text, error_message).
+    """
+    api_key = get_api_key(model["api_id"])
+    if not api_key:
+        log_request(model.get("name", ""), str(messages), "", "API-ключ не найден")
+        return "", "API-ключ не найден. Добавьте переменную в .env"
+
+    from models import build_request_body, get_auth_header
+    body = build_request_body(
+        model.get("model_type", "openai"),
+        "",  # не используется
+        model.get("name", "")
+    )
+    body["messages"] = messages
+
+    header_name, header_value = get_auth_header(model["api_id"])
+    headers = {
+        "Content-Type": "application/json",
+        header_name: header_value,
+    }
+
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            response = client.post(
+                model["api_url"],
+                json=body,
+                headers=headers,
+            )
+    except httpx.TimeoutException:
+        log_request(model.get("name", ""), str(messages), "", "Таймаут")
+        return "", "Таймаут запроса"
+    except httpx.ConnectError as e:
+        log_request(model.get("name", ""), str(messages), "", str(e))
+        return "", f"Ошибка подключения: {e}"
+    except Exception as e:
+        log_request(model.get("name", ""), str(messages), "", str(e))
+        return "", str(e)
+
+    if response.status_code == 401:
+        log_request(model.get("name", ""), str(messages), "", "401")
+        return "", "Неверный API-ключ (401)"
+    if response.status_code == 429:
+        log_request(model.get("name", ""), str(messages), "", "429")
+        return "", "Превышен лимит запросов (429)"
+    if response.status_code >= 500:
+        log_request(model.get("name", ""), str(messages), "", f"HTTP {response.status_code}")
+        return "", f"Ошибка сервера ({response.status_code})"
+    if response.status_code != 200:
+        log_request(model.get("name", ""), str(messages), "", f"HTTP {response.status_code}")
+        return "", f"Ошибка HTTP {response.status_code}: {response.text[:200]}"
+
+    try:
+        data = response.json()
+    except Exception:
+        return "", "Некорректный ответ (не JSON)"
+
+    choices = data.get("choices", [])
+    if not choices:
+        return "", "Пустой ответ от API"
+    message = choices[0].get("message", {})
+    content = message.get("content", "")
+    if not content:
+        return "", "Пустое содержимое ответа"
+    return content.strip(), None
+
+
 def send_prompt_to_models(
     models: list[dict],
     prompt: str,
