@@ -60,6 +60,22 @@ def init_db() -> None:
             );
         """)
         conn.commit()
+
+        # Добавить модель OpenRouter по умолчанию, если таблица пуста
+        cur = conn.execute("SELECT COUNT(*) FROM models")
+        if cur.fetchone()[0] == 0:
+            conn.execute(
+                """INSERT INTO models (name, api_url, api_id, is_active, model_type)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (
+                    "openai/gpt-4o-mini",
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    "OPENROUTER_API_KEY",
+                    1,
+                    "openrouter",
+                )
+            )
+            conn.commit()
     finally:
         conn.close()
 

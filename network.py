@@ -5,6 +5,12 @@ from typing import Optional
 
 from models import get_api_key, build_request_body, get_auth_header
 
+try:
+    from log_requests import log_request
+except ImportError:
+    def log_request(*args, **kwargs):
+        pass
+
 
 class NetworkError(Exception):
     """Ошибка при отправке запроса."""
@@ -24,6 +30,7 @@ def send_prompt_to_model(
     """
     api_key = get_api_key(model["api_id"])
     if not api_key:
+        log_request(model.get("name", ""), prompt, "", "API-ключ не найден")
         return "", "API-ключ не найден. Добавьте переменную в .env"
 
     body = build_request_body(
@@ -46,19 +53,26 @@ def send_prompt_to_model(
                 headers=headers,
             )
     except httpx.TimeoutException:
+        log_request(model.get("name", ""), prompt, "", "Таймаут")
         return "", "Таймаут запроса"
     except httpx.ConnectError as e:
+        log_request(model.get("name", ""), prompt, "", str(e))
         return "", f"Ошибка подключения: {e}"
     except Exception as e:
+        log_request(model.get("name", ""), prompt, "", str(e))
         return "", str(e)
 
     if response.status_code == 401:
+        log_request(model.get("name", ""), prompt, "", "401")
         return "", "Неверный API-ключ (401)"
     if response.status_code == 429:
+        log_request(model.get("name", ""), prompt, "", "429")
         return "", "Превышен лимит запросов (429)"
     if response.status_code >= 500:
+        log_request(model.get("name", ""), prompt, "", f"HTTP {response.status_code}")
         return "", f"Ошибка сервера ({response.status_code})"
     if response.status_code != 200:
+        log_request(model.get("name", ""), prompt, "", f"HTTP {response.status_code}")
         return "", f"Ошибка HTTP {response.status_code}: {response.text[:200]}"
 
     try:
@@ -74,8 +88,10 @@ def send_prompt_to_model(
     message = choices[0].get("message", {})
     content = message.get("content", "")
     if not content:
+        log_request(model.get("name", ""), prompt, "", "Пустой ответ")
         return "", "Пустое содержимое ответа"
 
+    log_request(model.get("name", ""), prompt, content.strip())
     return content.strip(), None
 
 

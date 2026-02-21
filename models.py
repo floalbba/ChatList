@@ -43,10 +43,12 @@ def build_request_body(model_type: str, prompt: str, model_name: str = "") -> di
     }
 
     if model_type == "groq":
-        # Groq использует тот же формат, но model может отличаться (llama, mixtral)
         body["model"] = model_name or "llama-3.1-8b-instant"
     elif model_type == "deepseek":
         body["model"] = model_name or "deepseek-chat"
+    elif model_type == "openrouter":
+        # OpenRouter: model = "openai/gpt-4o-mini", "anthropic/claude-3-sonnet" и т.д.
+        body["model"] = model_name or "openai/gpt-4o-mini"
 
     return body
 
