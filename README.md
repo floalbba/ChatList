@@ -4,7 +4,7 @@
 
 ## Установка
 
-Скачайте [последний релиз](https://github.com/USERNAME/REPO/releases/latest) и запустите `ChatList-X.X.X-Setup.exe`.
+Скачайте [последний релиз](https://github.com/floalbba/ChatList/releases/latest) и запустите `ChatList-X.X.X-Setup.exe`.
 
 ## Публикация
 

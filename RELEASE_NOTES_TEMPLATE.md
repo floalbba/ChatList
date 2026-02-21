@@ -25,5 +25,5 @@ ChatList — программа для отправки одного промт�
 
 ## Ссылки
 
-- [Документация](https://github.com/USERNAME/REPO/wiki)
-- [Страница проекта](https://USERNAME.github.io/REPO/)
+- [Документация](https://github.com/floalbba/ChatList/wiki)
+- [Страница проекта](https://floalbba.github.io/ChatList/)
